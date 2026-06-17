@@ -35,8 +35,8 @@ namespace DllLoader
                 Console.WriteLine("[*] Conectando con la consola web...");
                 using (WebClient client = new WebClient())
                 {
-                    // Si tienes problemas de HTTPS, descomenta la siguiente línea:
-                    // ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    // Forzar uso de TLS 1.2 para conexiones HTTPS seguras con Vercel
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     client.DownloadFile(serverUrl, savePath);
                 }
                 
