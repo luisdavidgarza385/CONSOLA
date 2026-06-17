@@ -2,7 +2,7 @@
 # Descarga la última DLL desde tu consola web y abre el inyector.
 
 # Configuración
-$ServerUrl = "http://localhost:3000/api/download/latest"
+$ServerUrl = "https://consola-beige.vercel.app/api/download/latest"
 $InjectorPath = "$env:USERPROFILE\Downloads\Extreme Injector v3.exe"
 $DllSavePath = "$env:USERPROFILE\Downloads\ultima_actualizacion.dll"
 

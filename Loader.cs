@@ -19,7 +19,7 @@ namespace DllLoader
             Console.ResetColor();
 
             // Configuración
-            string serverUrl = "http://localhost:3000/api/download/latest";
+            string serverUrl = "https://consola-beige.vercel.app/api/download/latest";
             string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string downloadsFolder = Path.Combine(userProfile, "Downloads");
             string savePath = Path.Combine(downloadsFolder, "ultima_actualizacion.dll");
