@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consola de Gestión de DLLs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <main class="glass-container">
+        <header>
+            <h1>DLL <span>Console</span></h1>
+            <p>Gestiona y distribuye tus archivos dinámicos con facilidad.</p>
+        </header>
+
+        <section class="upload-section">
+            <div id="drop-area" class="drop-area">
+                <input type="file" id="fileElem" accept=".dll" style="display:none">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </div>
+                <h3>Arrastra tu archivo .dll aquí</h3>
+                <p>o <label for="fileElem" class="browse-btn">explora tus archivos</label></p>
+            </div>
+            
+            <div id="upload-status" class="status-message hidden">
+                <!-- Status messages will appear here -->
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="card">
+                <h2>Estado Actual</h2>
+                <div id="latest-info" class="latest-info">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
+            <div class="card actions">
+                <h2>Herramientas Cliente</h2>
+                <p>Descarga la plantilla de Excel pre-configurada para conectarse automáticamente a esta consola.</p>
+                <!-- Aquí dejaremos un botón inactivo o un link a un Excel si lo tuviéramos, pero por ahora mostramos las instrucciones -->
+                <button id="show-instructions-btn" class="primary-btn">Ver Código VBA de Integración</button>
+            </div>
+        </section>
+        
+        <!-- Modal for Instructions -->
+        <div id="instructions-modal" class="modal hidden">
+            <div class="modal-content glass-container">
+                <span class="close-btn">&times;</span>
+                <h2>Instrucciones para tu Archivo Excel</h2>
+                <p>Copia el siguiente código y pégalo en el módulo `ThisWorkbook` de tu archivo Excel (.xlsm) para que se actualice automáticamente al abrirse.</p>
+                <div class="code-block-container">
+                    <pre><code id="vba-code-block">
+Private Sub Workbook_Open()
+    Dim http As Object
+    Dim adodbStream As Object
+    Dim url As String
+    Dim savePath As String
+    
+    ' La URL de tu consola web (Asegúrate de que la IP o dominio es correcto cuando la publiques)
+    url = "http://localhost:3000/api/download/latest"
+    
+    ' Dónde se guardará la DLL (en este caso, en la misma carpeta que el Excel)
+    savePath = ThisWorkbook.Path & "\actualizado.dll"
+    
+    Set http = CreateObject("MSXML2.XMLHTTP")
+    
+    ' Petición para descargar el archivo
+    http.Open "GET", url, False
+    http.send
+    
+    If http.Status = 200 Then
+        Set adodbStream = CreateObject("ADODB.Stream")
+        adodbStream.Open
+        adodbStream.Type = 1 ' adTypeBinary
+        adodbStream.Write http.responseBody
+        adodbStream.Position = 0
+        adodbStream.SaveToFile savePath, 2 ' adSaveCreateOverWrite
+        adodbStream.Close
+        MsgBox "DLL actualizada exitosamente.", vbInformation, "Actualización"
+    Else
+        MsgBox "No se pudo actualizar la DLL. Error " & http.Status, vbExclamation, "Error"
+    End If
+    
+    Set http = Nothing
+    Set adodbStream = Nothing
+End Sub
+                    </code></pre>
+                    <button id="copy-vba-btn" class="secondary-btn">Copiar Código</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
