@@ -54,7 +54,7 @@ namespace DllLoader
                 Console.WriteLine("    Asegurate de que tu servidor Node.js este corriendo.");
                 Console.ResetColor();
                 Console.WriteLine("\nPresiona cualquier tecla para salir...");
-                Console.ReadKey();
+                SafeReadKey();
                 return;
             }
 
@@ -96,7 +96,19 @@ namespace DllLoader
             }
 
             Console.WriteLine("\nProceso terminado. Presiona cualquier tecla para salir...");
-            Console.ReadKey();
+            SafeReadKey();
+        }
+
+        static void SafeReadKey()
+        {
+            try
+            {
+                Console.ReadKey(true);
+            }
+            catch (InvalidOperationException)
+            {
+                Console.Read();
+            }
         }
     }
 }
