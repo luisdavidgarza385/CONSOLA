@@ -24,6 +24,20 @@ const upload = multer({
     }
 });
 
+// Helper para realizar peticiones autenticadas a Vercel Blob (para almacenes privados)
+const fetchBlob = async (url) => {
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const response = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if (!response.ok) {
+        throw new Error(`Error al leer archivo de la nube: ${response.statusText}`);
+    }
+    return response;
+};
+
 // --- Rutas de la API para VERCEL BLOB ---
 
 app.post('/api/upload', upload.single('dll_file'), async (req, res) => {
@@ -32,9 +46,9 @@ app.post('/api/upload', upload.single('dll_file'), async (req, res) => {
     }
     
     try {
-        // Subir la DLL a Vercel Blob
+        // Subir la DLL a Vercel Blob usando acceso 'private'
         const blob = await put(req.file.originalname, req.file.buffer, {
-            access: 'public',
+            access: 'private',
             addRandomSuffix: false // Sobreescribe si tiene el mismo nombre
         });
 
@@ -44,12 +58,12 @@ app.post('/api/upload', upload.single('dll_file'), async (req, res) => {
             originalName: req.file.originalname,
             uploadTime: new Date().toISOString(),
             size: req.file.size,
-            url: blob.url // URL de descarga directa
+            url: blob.url // URL del archivo
         };
         
-        // Guardar metadata en Vercel Blob como 'latest_info.json'
+        // Guardar metadata en Vercel Blob como 'latest_info.json' usando acceso 'private'
         await put('latest_info.json', JSON.stringify(metadata), {
-            access: 'public',
+            access: 'private',
             addRandomSuffix: false
         });
 
@@ -66,14 +80,14 @@ app.get('/api/latest-info', async (req, res) => {
         const infoBlob = blobs.find(b => b.pathname === 'latest_info.json');
         
         if (infoBlob) {
-            const response = await fetch(infoBlob.url);
+            const response = await fetchBlob(infoBlob.url);
             const info = await response.json();
             res.json({ success: true, data: info });
         } else {
             res.status(404).json({ success: false, message: 'Aún no se ha subido ninguna DLL.' });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error al leer de la nube.' });
+        res.status(500).json({ success: false, message: 'Error al leer de la nube: ' + error.message });
     }
 });
 
@@ -86,13 +100,22 @@ app.get('/api/download/latest', async (req, res) => {
             return res.status(404).send('Aún no se ha subido ninguna DLL a la nube.');
         }
 
-        const response = await fetch(infoBlob.url);
-        const info = await response.json();
+        const infoResponse = await fetchBlob(infoBlob.url);
+        const info = await infoResponse.json();
         
-        // Redirigir la descarga al enlace directo de Vercel Blob
-        res.redirect(info.url);
+        // Descargar el archivo desde Vercel Blob usando el token de autenticación
+        const fileResponse = await fetchBlob(info.url);
+        
+        // Convertir el cuerpo de la respuesta a un buffer y enviarlo al cliente
+        const arrayBuffer = await fileResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        res.setHeader('Content-Disposition', `attachment; filename="${info.originalName}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.send(buffer);
     } catch (error) {
-        res.status(500).send('Error al intentar descargar de la nube.');
+        console.error(error);
+        res.status(500).send('Error al intentar descargar de la nube: ' + error.message);
     }
 });
 
